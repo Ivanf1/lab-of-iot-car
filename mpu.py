@@ -24,7 +24,7 @@ class Mpu:
 
         # For calibration
         DISCARDED_MEASURES = 100
-        CALIBRATION_MEASURES = 5000 #5000
+        CALIBRATION_MEASURES = 5000
         CHECKING_MEASURES = 50
         ACCEL_PREOFFSET_MAGIC_NUMBER = 8
         GYRO_PREOFFSET_MAGIC_NUMBER = 4
@@ -163,6 +163,9 @@ class Mpu:
 
                 self.set_gyro_offsets(sumGyroX, sumGyroY, sumGyroZ)
                 print("calibration completed")
+
+        def set_calibration_measures(self, calibration_measures):
+            self.CALIBRATION_MEASURES = calibration_measures
 
         def read_raw_data(self, addr):
                 # Accelero and Gyro value are 16-bit
