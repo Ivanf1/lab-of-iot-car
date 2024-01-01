@@ -8,6 +8,10 @@ IR_LEFT_PIN = 20
 IR_MIDDLE_PIN = 16
 IR_RIGHT_PIN = 12 
 
+TURNING_ANGLE = 38
+TURNING_ANGLE_THRESHOLD = 2
+DEFAULT_SPEED = 30
+
 def map(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 
@@ -25,9 +29,7 @@ class LineFollower:
         self.bw.ready()
         self.fw.ready()
 
-        self.bw_speed = 30
-
-        self.bw.speed = self.bw_speed
+        self.bw.speed = self.DEFAULT_SPEED
 
         gpio.setmode(gpio.BCM)
 
@@ -39,6 +41,9 @@ class LineFollower:
 
         self.still_on_intersection = False
         self.last_action = ""
+
+        self.intersection_list = ["r", "l", "i", "l", "l", "l", "r", "s"]
+        self.intersection_idx = 0
 
     def get_ir_values(self):
         ir_values = (gpio.input(IR_LEFT_PIN) << 2) | (gpio.input(IR_MIDDLE_PIN) << 1) | (gpio.input(IR_RIGHT_PIN) << 0)
@@ -53,9 +58,9 @@ class LineFollower:
 
     def is_target_angle_reached(self, current_angle, target_angle, direction):
         if (direction == "r"):
-            return (target_angle - 2) < current_angle < (target_angle + 2)
+            return (target_angle - TURNING_ANGLE_THRESHOLD) < current_angle < (target_angle + TURNING_ANGLE_THRESHOLD)
         else:
-            return (target_angle + 2) > current_angle > (target_angle - 2)
+            return (target_angle + TURNING_ANGLE_THRESHOLD) > current_angle > (target_angle - TURNING_ANGLE_THRESHOLD)
 
     def rotate_to_match_target_angle(self, target_angle, direction):
         self.gyro.execute()
@@ -92,9 +97,9 @@ class LineFollower:
         # calculate the target angle and map it to range(-180, +180)
         mapped_target_angle = 0
         if (direction == "l"):
-            mapped_target_angle = (mapped_angle_z + 38) % 360
+            mapped_target_angle = (mapped_angle_z + TURNING_ANGLE) % 360
         else:
-            mapped_target_angle = (mapped_angle_z - 38) % 360
+            mapped_target_angle = (mapped_angle_z - TURNING_ANGLE) % 360
 
         target_angle = map(mapped_target_angle, 0, 360, -180, 180)
         print("mapped target_angle: %f" % mapped_target_angle)
@@ -114,7 +119,7 @@ class LineFollower:
             self.gyro.execute()
             print("current angle z: %f" % self.gyro.get_ang_z())
 
-        time.sleep(0.3)
+        time.sleep(0.25)
         if (not self.is_line_detected()):
             print("overshoot")
             print("rotating until car on line")
@@ -144,69 +149,99 @@ class LineFollower:
                     self.still_on_intersection = False
 
             elif (ir_values == 2): # 010
-                self.bw.speed = self.bw_speed
+                self.bw.speed = self.DEFAULT_SPEED
                 self.bw.forward()
                 if (self.still_on_intersection):
                     self.still_on_intersection = False
 
             elif (ir_values == 4 or ir_values == 6): # 100 | 110
-                self.bw.speed = self.bw_speed
+                self.bw.speed = self.DEFAULT_SPEED
                 self.bw.pivot_left()
                 if (self.still_on_intersection):
                     self.still_on_intersection = False
             
             elif (ir_values == 1 or ir_values == 3): # 001 | 011
-                self.bw.speed = self.bw_speed
+                self.bw.speed = self.DEFAULT_SPEED
                 self.bw.pivot_right()
                 if (self.still_on_intersection):
                     self.still_on_intersection = False
             
             elif (ir_values == 7): # 111
                 if (not self.still_on_intersection):
-                    self.line_count += 1
-                if (self.line_count > 7):
-                    self.bw.stop()
+                    pass
 
-                if (self.line_count == 1):
+                    # self.line_count += 1
+                # if (self.line_count > 7):
+                #     self.bw.stop()
+
+                action = self.intersection_list[self.intersection_idx]
+                if (action == "r"):
                     print("switching to new lane - right")
                     self.switch_to_new_lane("r")
                     print("")
                     self.still_on_intersection = False
                     self.last_action = "slr"
-                if (self.line_count == 2):
+                    self.intersection_idx += 1
+                elif (action == "l"):
                     print("switching to new lane - left")
                     self.switch_to_new_lane("l")
                     print("")
                     self.still_on_intersection = False
                     self.last_action = "sll"
-                if (self.line_count == 3):
+                    self.intersection_idx += 1
+                elif (action == "i"):
                     if (not self.still_on_intersection):
                         print("ignoring intersection \n")
-                        self.bw.speed = self.bw_speed
+                        self.bw.speed = DEFAULT_SPEED
                         self.bw.forward()
                         self.still_on_intersection = True
                         self.last_action = ""
-                if (self.line_count == 4):
-                    print("switching to new lane - left")
-                    self.switch_to_new_lane("l")
-                    print("")
-                    self.still_on_intersection = False
-                    self.last_action = "sll"
-                if (self.line_count == 5):
-                    print("switching to new lane - left")
-                    self.switch_to_new_lane("l")
-                    print("")
-                    self.still_on_intersection = False
-                    self.last_action = "sll"
-                if (self.line_count == 6):
-                    print("switching to new lane - left")
-                    self.switch_to_new_lane("l")
-                    print("")
-                    self.still_on_intersection = False
-                    self.last_action = "sll"
-                if (self.line_count == 7):
-                    print("switching to new lane - right")
-                    self.switch_to_new_lane("r")
-                    print("")
-                    self.still_on_intersection = False
-                    self.last_action = "slr"
+                        self.intersection_idx += 1
+                elif (action == "s"):
+                    self.bw.stop()
+
+
+
+                # if (self.line_count == 1):
+                #     print("switching to new lane - right")
+                #     self.switch_to_new_lane("r")
+                #     print("")
+                #     self.still_on_intersection = False
+                #     self.last_action = "slr"
+                # if (self.line_count == 2):
+                #     print("switching to new lane - left")
+                #     self.switch_to_new_lane("l")
+                #     print("")
+                #     self.still_on_intersection = False
+                #     self.last_action = "sll"
+                # if (self.line_count == 3):
+                #     if (not self.still_on_intersection):
+                #         print("ignoring intersection \n")
+                #         self.bw.speed = DEFAULT_SPEED
+                #         self.bw.forward()
+                #         self.still_on_intersection = True
+                #         self.last_action = ""
+                # if (self.line_count == 4):
+                #     print("switching to new lane - left")
+                #     self.switch_to_new_lane("l")
+                #     print("")
+                #     self.still_on_intersection = False
+                #     self.last_action = "sll"
+                # if (self.line_count == 5):
+                #     print("switching to new lane - left")
+                #     self.switch_to_new_lane("l")
+                #     print("")
+                #     self.still_on_intersection = False
+                #     self.last_action = "sll"
+                # if (self.line_count == 6):
+                #     print("switching to new lane - left")
+                #     self.switch_to_new_lane("l")
+                #     print("")
+                #     self.still_on_intersection = False
+                #     self.last_action = "sll"
+                # if (self.line_count == 7):
+                #     print("switching to new lane - right")
+                #     self.switch_to_new_lane("r")
+                #     print("")
+                #     self.still_on_intersection = False
+                #     self.last_action = "slr"
