@@ -1,6 +1,6 @@
 import RPi.GPIO as gpio
 import motor_controller
-import mpu
+import gyro_controller
 import time
 from enum import Enum
 
@@ -25,11 +25,13 @@ def map(x, in_min, in_max, out_min, out_max):
 
 class LineFollower:
     def __init__(self):
-        self.gyro = mpu.Mpu()
-        self.gyro.base_initialize()
-        self.gyro.set_calibration_measures(1500)
-        self.gyro.calibrate()
-        self.gyro.execute()
+        # self.gyro = mpu.Mpu()
+        # self.gyro.base_initialize()
+        # self.gyro.set_calibration_measures(1500)
+        # self.gyro.calibrate()
+        # self.gyro.execute()
+
+        self.gyro_controller = gyro_controller.GyroController()
 
         self.motor_controller = motor_controller.MotorController()
 
@@ -69,19 +71,19 @@ class LineFollower:
             return (target_angle + TURNING_ANGLE_THRESHOLD) > current_angle > (target_angle - TURNING_ANGLE_THRESHOLD)
 
     def rotate_to_match_target_angle(self, target_angle, direction):
-        self.gyro.execute()
-        while (not self.is_target_angle_reached(self.gyro.get_ang_z(), target_angle, direction)):
+        # self.gyro.execute()
+        while (not self.is_target_angle_reached(self.gyro_controller.get_ang_z(), target_angle, direction)):
             if (direction == "l"):
                 self.motor_controller.pivot_left()
             else:
                 self.motor_controller.pivot_right()
-            self.gyro.execute()
+            # self.gyro.execute()
             # print("current angle: %f" % gyro.get_ang_z())
             # print("target angle: %f" % target_angle)
         self.motor_controller.stop()
         print("target_angle reached")
-        self.gyro.execute()
-        print("current angle z: %f" % self.gyro.get_ang_z())
+        # self.gyro.execute()
+        print("current angle z: %f" % self.gyro_controller.get_ang_z())
 
     def rotate_to_detect_line(self, direction):
         while (not self.is_line_detected()):
@@ -93,9 +95,9 @@ class LineFollower:
 
     def rotate_to_opposite_direction(self):
         # update gyro values
-        self.gyro.execute()
+        # self.gyro.execute()
         # get the current z angle and map it to range(0, 360)
-        angle_z = self.gyro.get_ang_z()
+        angle_z = self.gyro_controller.get_ang_z()
         mapped_angle_z = map(angle_z, -180, 180, 0, 360)
         print("current angle z: %f" % angle_z)
         print("mapped current angle z: %f" % mapped_angle_z)
@@ -123,9 +125,9 @@ class LineFollower:
 
     def switch_to_new_lane(self, direction):
         # update gyro values
-        self.gyro.execute()
+        # self.gyro.execute()
         # get the current z angle and map it to range(0, 360)
-        angle_z = self.gyro.get_ang_z()
+        angle_z = self.gyro_controller.get_ang_z()
         mapped_angle_z = map(angle_z, -180, 180, 0, 360)
         print("current angle z: %f" % angle_z)
         print("mapped current angle z: %f" % mapped_angle_z)
@@ -152,8 +154,8 @@ class LineFollower:
             print("rotating until car on line")
             self.rotate_to_detect_line(direction)
             print("car on line")
-            self.gyro.execute()
-            print("current angle z: %f" % self.gyro.get_ang_z())
+            # self.gyro.execute()
+            print("current angle z: %f" % self.gyro_controller.get_ang_z())
 
         time.sleep(SLEEP_TIME_AFTER_PIVOT)
         if (not self.is_line_detected()):
