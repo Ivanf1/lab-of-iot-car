@@ -1,4 +1,4 @@
-import mpu
+from sensors import mpu
 
 class GyroController:
     def __init__(self) -> None:

@@ -1,4 +1,4 @@
-from picar import back_wheels, front_wheels
+from picar import back_wheels 
 import picar as picar
 
 DEFAULT_SPEED = 30
@@ -7,12 +7,8 @@ class MotorController:
     def __init__(self) -> None:
         picar.setup()
         db_file = "/home/ivan/programs/SunFounder_PiCar-V/remote_control/remote_control/driver/config"
-        self.fw = front_wheels.Front_Wheels(debug=False, db=db_file)
         self.bw = back_wheels.Back_Wheels(debug=False, db=db_file)
         self.bw.ready()
-        self.fw.ready()
-
-        self.bw.speed = DEFAULT_SPEED
 
     def forward(self):
         self.bw.speed = DEFAULT_SPEED

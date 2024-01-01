@@ -1,17 +1,10 @@
-import RPi.GPIO as gpio
-import motor_controller
-import gyro_controller
-import time
+from controllers import motor_controller, gyro_controller, ir_controller
 from enum import Enum
 
-IR_LEFT_PIN = 20
-IR_MIDDLE_PIN = 16
-IR_RIGHT_PIN = 12 
+NEW_LINE_TURNING_ANGLE = 38
+OPPOSITE_DIRECTION_TURNING_ANGLE = 195
 
-TURNING_ANGLE = 38
 TURNING_ANGLE_THRESHOLD = 2
-
-SLEEP_TIME_AFTER_PIVOT = 0.25
 
 class IntersectionAction(Enum):
     LEFT = 0
@@ -25,21 +18,9 @@ def map(x, in_min, in_max, out_min, out_max):
 
 class LineFollower:
     def __init__(self):
-        # self.gyro = mpu.Mpu()
-        # self.gyro.base_initialize()
-        # self.gyro.set_calibration_measures(1500)
-        # self.gyro.calibrate()
-        # self.gyro.execute()
-
         self.gyro_controller = gyro_controller.GyroController()
-
         self.motor_controller = motor_controller.MotorController()
-
-        gpio.setmode(gpio.BCM)
-
-        gpio.setup(IR_LEFT_PIN, gpio.IN) # IR left
-        gpio.setup(IR_MIDDLE_PIN, gpio.IN) # IR middle
-        gpio.setup(IR_RIGHT_PIN, gpio.IN) # IR right
+        self.ir_controller = ir_controller.IRController()
 
         self.line_count = 0
 
@@ -53,16 +34,9 @@ class LineFollower:
         self.intersection_list = []
         self.intersection_idx = 0
 
-    def get_ir_values(self):
-        ir_values = (gpio.input(IR_LEFT_PIN) << 2) | (gpio.input(IR_MIDDLE_PIN) << 1) | (gpio.input(IR_RIGHT_PIN) << 0)
-        return ir_values
-
     def is_line_detected(self):
-        ir_values = self.get_ir_values()
-
-        if (ir_values == 0 or ir_values == 7):
-            return False
-        return True
+        ir_values = self.ir_controller.get_ir_values()
+        return (ir_values != 0 and ir_values != 7)
 
     def is_target_angle_reached(self, current_angle, target_angle, direction):
         if (direction == "r"):
@@ -71,18 +45,15 @@ class LineFollower:
             return (target_angle + TURNING_ANGLE_THRESHOLD) > current_angle > (target_angle - TURNING_ANGLE_THRESHOLD)
 
     def rotate_to_match_target_angle(self, target_angle, direction):
-        # self.gyro.execute()
         while (not self.is_target_angle_reached(self.gyro_controller.get_ang_z(), target_angle, direction)):
             if (direction == "l"):
                 self.motor_controller.pivot_left()
             else:
                 self.motor_controller.pivot_right()
-            # self.gyro.execute()
             # print("current angle: %f" % gyro.get_ang_z())
             # print("target angle: %f" % target_angle)
         self.motor_controller.stop()
         print("target_angle reached")
-        # self.gyro.execute()
         print("current angle z: %f" % self.gyro_controller.get_ang_z())
 
     def rotate_to_detect_line(self, direction):
@@ -93,39 +64,7 @@ class LineFollower:
                 self.motor_controller.pivot_right()
         self.motor_controller.stop()
 
-    def rotate_to_opposite_direction(self):
-        # update gyro values
-        # self.gyro.execute()
-        # get the current z angle and map it to range(0, 360)
-        angle_z = self.gyro_controller.get_ang_z()
-        mapped_angle_z = map(angle_z, -180, 180, 0, 360)
-        print("current angle z: %f" % angle_z)
-        print("mapped current angle z: %f" % mapped_angle_z)
-
-        # calculate the target angle and map it to range(-180, +180)
-        mapped_target_angle = (mapped_angle_z + 180) % 360
-
-        target_angle = map(mapped_target_angle, 0, 360, -180, 180)
-        print("mapped target_angle: %f" % mapped_target_angle)
-        print("target_angle: %f" % target_angle)
-
-        # rotate until target angle is reached
-        print("rotating until angle matched")
-        self.rotate_to_match_target_angle(target_angle, "l")
-
-        # at this point it is possible that the car is not on the line
-        # so we make it rotate in the same direction as before until
-        # the car is back on the line
-        time.sleep(SLEEP_TIME_AFTER_PIVOT)
-        if (not self.is_line_detected()):
-            print("overshoot")
-            print("rotating until car on line")
-            self.rotate_to_detect_line("r")
-            print("car on line")
-
-    def switch_to_new_lane(self, direction):
-        # update gyro values
-        # self.gyro.execute()
+    def rotate(self, direction, turning_angle):
         # get the current z angle and map it to range(0, 360)
         angle_z = self.gyro_controller.get_ang_z()
         mapped_angle_z = map(angle_z, -180, 180, 0, 360)
@@ -135,9 +74,9 @@ class LineFollower:
         # calculate the target angle and map it to range(-180, +180)
         mapped_target_angle = 0
         if (direction == "l"):
-            mapped_target_angle = (mapped_angle_z + TURNING_ANGLE) % 360
+            mapped_target_angle = (mapped_angle_z + turning_angle) % 360
         else:
-            mapped_target_angle = (mapped_angle_z - TURNING_ANGLE) % 360
+            mapped_target_angle = (mapped_angle_z - turning_angle) % 360
 
         target_angle = map(mapped_target_angle, 0, 360, -180, 180)
         print("mapped target_angle: %f" % mapped_target_angle)
@@ -154,29 +93,39 @@ class LineFollower:
             print("rotating until car on line")
             self.rotate_to_detect_line(direction)
             print("car on line")
-            # self.gyro.execute()
             print("current angle z: %f" % self.gyro_controller.get_ang_z())
 
-        time.sleep(SLEEP_TIME_AFTER_PIVOT)
-        if (not self.is_line_detected()):
-            print("overshoot")
-            print("rotating until car on line")
-            if (direction == "r"):
-                self.rotate_to_detect_line("l")
-            else:
-                self.rotate_to_detect_line("r")
-            print("car on line")
-        
-        print("lane switched")
+    def rotate_to_opposite_direction(self, direction):
+        self.rotate(direction, OPPOSITE_DIRECTION_TURNING_ANGLE)
+
+    def switch_to_new_lane(self, direction):
+        self.rotate(direction, NEW_LINE_TURNING_ANGLE)
 
     def do_follow_line(self, intersection_list: list[IntersectionAction]):
         self.intersection_list = intersection_list
 
         while True:
-            ir_values = self.get_ir_values()
+            ir_values = self.ir_controller.get_ir_values()
 
             if (ir_values == 0): # 000
                 self.motor_controller.stop()
+
+                if (self.last_action == "slr"):
+                    print("overshoot")
+                    print("rotating until car on line")
+                    self.rotate_to_detect_line("l")
+                    print("car on line")
+                elif (self.last_action == "sll"):
+                    print("overshoot")
+                    print("rotating until car on line")
+                    self.rotate_to_detect_line("r")
+                    print("car on line")
+                elif (self.last_action == "ta"):
+                    print("overshoot")
+                    print("rotating until car on line")
+                    self.rotate_to_detect_line("r")
+                    print("car on line")
+
                 if (self.still_on_intersection):
                     self.still_on_intersection = False
 
@@ -224,7 +173,7 @@ class LineFollower:
                         self.intersection_idx += 1
                 elif (action == IntersectionAction.ROTATE_TO_OPPOSITE_DIRECTION):
                     print("rotating to opposite direction")
-                    self.rotate_to_opposite_direction()
+                    self.rotate_to_opposite_direction("l")
                     print("")
                     self.still_on_intersection = False
                     self.last_action = "sll"
