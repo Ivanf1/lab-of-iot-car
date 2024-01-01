@@ -1,17 +1,10 @@
 from picar import back_wheels, front_wheels
 import picar as picar
-import mpu
 
 DEFAULT_SPEED = 30
 
-class CarController:
+class MotorController:
     def __init__(self) -> None:
-        self.gyro = mpu.Mpu()
-        self.gyro.base_initialize()
-        self.gyro.set_calibration_measures(1500)
-        self.gyro.calibrate()
-        self.gyro.execute()
-
         picar.setup()
         db_file = "/home/ivan/programs/SunFounder_PiCar-V/remote_control/remote_control/driver/config"
         self.fw = front_wheels.Front_Wheels(debug=False, db=db_file)

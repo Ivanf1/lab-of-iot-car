@@ -1,7 +1,5 @@
 import RPi.GPIO as gpio
-# from picar import back_wheels, front_wheels
-# import picar as picar
-import car_controller
+import motor_controller
 import mpu
 import time
 from enum import Enum
@@ -12,8 +10,6 @@ IR_RIGHT_PIN = 12
 
 TURNING_ANGLE = 38
 TURNING_ANGLE_THRESHOLD = 2
-
-# DEFAULT_SPEED = 30
 
 SLEEP_TIME_AFTER_PIVOT = 0.25
 
@@ -35,16 +31,7 @@ class LineFollower:
         self.gyro.calibrate()
         self.gyro.execute()
 
-        self.car_controller = car_controller.CarController()
-
-        # picar.setup()
-        # db_file = "/home/ivan/programs/SunFounder_PiCar-V/remote_control/remote_control/driver/config"
-        # self.fw = front_wheels.Front_Wheels(debug=False, db=db_file)
-        # self.bw = back_wheels.Back_Wheels(debug=False, db=db_file)
-        # self.bw.ready()
-        # self.fw.ready()
-
-        # self.bw.speed = DEFAULT_SPEED
+        self.motor_controller = motor_controller.MotorController()
 
         gpio.setmode(gpio.BCM)
 
@@ -85,16 +72,13 @@ class LineFollower:
         self.gyro.execute()
         while (not self.is_target_angle_reached(self.gyro.get_ang_z(), target_angle, direction)):
             if (direction == "l"):
-                self.car_controller.pivot_left()
-                # self.bw.pivot_left()
+                self.motor_controller.pivot_left()
             else:
-                self.car_controller.pivot_right()
-                # self.bw.pivot_right()
+                self.motor_controller.pivot_right()
             self.gyro.execute()
             # print("current angle: %f" % gyro.get_ang_z())
             # print("target angle: %f" % target_angle)
-        self.car_controller.stop()
-        # self.bw.stop()
+        self.motor_controller.stop()
         print("target_angle reached")
         self.gyro.execute()
         print("current angle z: %f" % self.gyro.get_ang_z())
@@ -102,13 +86,10 @@ class LineFollower:
     def rotate_to_detect_line(self, direction):
         while (not self.is_line_detected()):
             if (direction == "l"):
-                self.car_controller.pivot_left()
-                # self.bw.pivot_left()
+                self.motor_controller.pivot_left()
             else:
-                self.car_controller.pivot_right()
-                # self.bw.pivot_right()
-        self.car_controller.stop()
-        # self.bw.stop()
+                self.motor_controller.pivot_right()
+        self.motor_controller.stop()
 
     def rotate_to_opposite_direction(self):
         # update gyro values
@@ -193,29 +174,22 @@ class LineFollower:
             ir_values = self.get_ir_values()
 
             if (ir_values == 0): # 000
-                self.car_controller.stop()
-                # self.bw.stop()
+                self.motor_controller.stop()
                 if (self.still_on_intersection):
                     self.still_on_intersection = False
 
             elif (ir_values == 2): # 010
-                self.car_controller.forward()
-                # self.bw.speed = DEFAULT_SPEED
-                # self.bw.forward()
+                self.motor_controller.forward()
                 if (self.still_on_intersection):
                     self.still_on_intersection = False
 
             elif (ir_values == 4 or ir_values == 6): # 100 | 110
-                self.car_controller.pivot_left()
-                # self.bw.speed = DEFAULT_SPEED
-                # self.bw.pivot_left()
+                self.motor_controller.pivot_left()
                 if (self.still_on_intersection):
                     self.still_on_intersection = False
             
             elif (ir_values == 1 or ir_values == 3): # 001 | 011
-                self.car_controller.pivot_right()
-                # self.bw.speed = DEFAULT_SPEED
-                # self.bw.pivot_right()
+                self.motor_controller.pivot_right()
                 if (self.still_on_intersection):
                     self.still_on_intersection = False
             
@@ -242,9 +216,7 @@ class LineFollower:
                 elif (action == IntersectionAction.IGNORE):
                     if (not self.still_on_intersection):
                         print("ignoring intersection \n")
-                        self.car_controller.forward()
-                        # self.bw.speed = DEFAULT_SPEED
-                        # self.bw.forward()
+                        self.motor_controller.forward()
                         self.still_on_intersection = True
                         self.last_action = ""
                         self.intersection_idx += 1
@@ -257,7 +229,6 @@ class LineFollower:
                     self.intersection_idx += 1
                 elif (action == IntersectionAction.STOP):
                     print("stop reached")
-                    self.car_controller.stop()
-                    # self.bw.stop()
+                    self.motor_controller.stop()
                     self.reset_actions()
                     break
