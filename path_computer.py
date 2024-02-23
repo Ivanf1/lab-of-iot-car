@@ -7,10 +7,10 @@ class PathComputer:
     def __init__(self) -> None:
         self.path_finder = path_finder.PathFinder()
 
-    def follow_path(self, stops):
+    def compute_path(self, stops):
         path, directions = self.path_finder.compute_path(stops=stops)
 
-        self.directions_to_intersection_actions(path=path, stops=stops, directions=directions)
+        return self.directions_to_intersection_actions(path=path, stops=stops, directions=directions)
 
     def directions_to_intersection_actions(self, path, stops, directions):
         actions = []
@@ -46,5 +46,4 @@ class PathComputer:
                 a = IntersectionAction.ROTATE_TO_OPPOSITE_DIRECTION
             actions_enums.append(a)
         
-        print(actions_enums)
         return actions_enums
