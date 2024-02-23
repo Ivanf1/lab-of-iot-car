@@ -144,19 +144,23 @@ class Graph():
         return previous_nodes, shortest_path
 
     def compute_path(self, stops):
+        paths = []
+
         for idx, stop in enumerate(stops):
             if (idx == 0):
                 start_node = "Start"
             else:
                 start_node = stops[idx - 1]
             previous_nodes, _ = self.dijkstra_algorithm(start_node=start_node)
-            self.print_result(previous_nodes, start_node=start_node, target_node=stop)
+            paths.append(self.compute_path_piece(previous_nodes=previous_nodes, start_node=start_node, target_node=stop))
 
         # go back to Start from the last stop
         previous_nodes, _ = self.dijkstra_algorithm(start_node=stops[-1])
-        self.print_result(previous_nodes, start_node=stops[-1], target_node="Start")
+        paths.append(self.compute_path_piece(previous_nodes=previous_nodes, start_node=stops[-1], target_node="Start"))
 
-    def print_result(self, previous_nodes, start_node, target_node):
+        self.connect_paths(paths=paths)
+
+    def compute_path_piece(self, previous_nodes, start_node, target_node):
         path = []
         node = target_node
         
@@ -166,17 +170,45 @@ class Graph():
     
         # Add the start node manually
         path.append(start_node)
-        # path = reversed(path)
         list.reverse(path)
+        return path
 
-        out = []
-        i = 0
-        while i < len(path) -1:
-            out.append(path[i] + " (" + self.direction_graph[path[i]][path[i+1]]+ ")")
-            i += 1
-        out.append(path[len(path)-1])
+    def connect_paths(self, paths):
+        paths_joined = []
+        for idx, path in enumerate(paths):
+            if (idx == 0):
+                for stop in path:
+                    paths_joined.append(stop)
+                continue
 
-        print(" -> ".join(out))
+            path.pop(0)
+            for stop in path:
+                paths_joined.append(stop)
+        
+        print(paths_joined)
+        return paths_joined
+
+    # def print_result(self, previous_nodes, start_node, target_node):
+    #     path = []
+    #     node = target_node
+        
+    #     while node != start_node:
+    #         path.append(node)
+    #         node = previous_nodes[node]
+    
+    #     # Add the start node manually
+    #     path.append(start_node)
+    #     # path = reversed(path)
+    #     list.reverse(path)
+
+    #     out = []
+    #     i = 0
+    #     while i < len(path) -1:
+    #         out.append(path[i] + " (" + self.direction_graph[path[i]][path[i+1]]+ ")")
+    #         i += 1
+    #     out.append(path[len(path)-1])
+
+    #     print(" -> ".join(out))
 
 path_finder = PathFinder()
 path_finder.compute_path()
