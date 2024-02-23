@@ -1,23 +1,16 @@
-import requests
 import sys
 
 class PathFinder:
-    baseUrl = "http://localhost:3000/api/person/"
     graph = None
 
     def __init__(self) -> None:
         self.graph = Graph()
 
-    def get_cube_positions_for_person(self, person_uuid):
-        response = requests.get(self.baseUrl + person_uuid + "/cubes")
-        response_json = response.json()
-        print(response_json)
-
     def compute_path(self, stops):
         path = self.graph.compute_path(stops=stops)
         directions = self.graph.compute_directions_for_path(path=path)
 
-        return path, directions 
+        return path, directions
     
  
 class Graph():
