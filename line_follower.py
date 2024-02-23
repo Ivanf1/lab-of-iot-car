@@ -1,17 +1,10 @@
 from controllers import motor_controller, gyro_controller, ir_controller
-from enum import Enum
+from intersection_actions import IntersectionAction
 
 NEW_LINE_TURNING_ANGLE = 38
 OPPOSITE_DIRECTION_TURNING_ANGLE = 195
 
 TURNING_ANGLE_THRESHOLD = 2
-
-class IntersectionAction(Enum):
-    LEFT = 0
-    RIGHT = 1
-    IGNORE = 2
-    STOP = 3
-    ROTATE_TO_OPPOSITE_DIRECTION = 4
 
 def map(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
