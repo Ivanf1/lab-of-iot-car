@@ -14,8 +14,8 @@ class PathFinder:
         print(response_json)
 
     def compute_path(self):
-        # compute_path(["P1C0", "P1C1", "P0C0"]) # error!
-        path = self.graph.compute_path(["P0C0"])
+        path = self.graph.compute_path(["P0C0", "P0C1", "P1C0", "P1C1"])
+        self.graph.compute_directions_for_path(path=path)
     
  
 class Graph():
@@ -33,9 +33,19 @@ class Graph():
 
         self.graph["Start"]["Start_intersection_from_P0"] = 1
         self.graph["Start"]["Start_intersection_from_P1"] = 1
-        self.graph["Start_intersection_from_P0"]["Start_intersection_from_P1"] = 2
+
+        self.graph["Start_intersection_from_P0"]["P1_intersection"] = 1
+        self.graph["P1_intersection"]["Start_intersection_from_P0"] = 20
+
         self.graph["Start_intersection_from_P0"]["P0_intersection"] = 1
+        self.graph["P0_intersection"]["Start_intersection_from_P0"] = 1
+
+        self.graph["Start_intersection_from_P1"]["P0_intersection"] = 1
+        self.graph["P0_intersection"]["Start_intersection_from_P1"] = 20
+
         self.graph["Start_intersection_from_P1"]["P1_intersection"] = 1
+        self.graph["P1_intersection"]["Start_intersection_from_P1"] = 1
+
         self.graph["P0_intersection"]["P0C0"] = 1
         self.graph["P1_intersection"]["P1C0"] = 1
         self.graph["P1C0"]["P1C1"] = 1
@@ -51,10 +61,12 @@ class Graph():
         self.direction_graph["P0C0"]["P0C1"] = "straight"
         self.direction_graph["P0_intersection"]["P0C0"] = "r"
         self.direction_graph["Start_intersection_from_P0"]["P0_intersection"] = "l"
+        self.direction_graph["Start_intersection_from_P0"]["P1_intersection"] = "straight"
         self.direction_graph["Start"]["Start_intersection_from_P0"] = "straight"
         # ---------------------------------------------------------------------------
         self.direction_graph["Start"]["Start_intersection_from_P1"] = "straight"
         self.direction_graph["Start_intersection_from_P1"]["P1_intersection"] = "r"
+        self.direction_graph["Start_intersection_from_P1"]["P0_intersection"] = "straight"
         self.direction_graph["P1_intersection"]["P1C0"] = "l"
         self.direction_graph["P1C0"]["P1C1"] = "straight"
 
@@ -62,9 +74,9 @@ class Graph():
         self.direction_graph["P0C1"]["P0C0"] = "straight"
         self.direction_graph["P0C0"]["P0_intersection"] = "straight"
         self.direction_graph["P0_intersection"]["Start_intersection_from_P0"] = "l"
-        self.direction_graph["Start_intersection_from_P0"]["Start"] = "straight"
+        self.direction_graph["Start_intersection_from_P0"]["Start"] = "r"
         # ---------------------------------------------------------------------------
-        self.direction_graph["Start_intersection_from_P1"]["Start"] = "straight"
+        self.direction_graph["Start_intersection_from_P1"]["Start"] = "l"
         self.direction_graph["P1_intersection"]["Start_intersection_from_P1"] = "r"
         self.direction_graph["P1C0"]["P1_intersection"] = "straight"
         self.direction_graph["P1C1"]["P1C0"] = "straight"
@@ -83,6 +95,9 @@ class Graph():
         for node, edges in graph.items():
             for adjacent_node, value in edges.items():
                 if graph[adjacent_node].get(node, False) == False:
+                    if adjacent_node == "Start_intersection_from_P0" or adjacent_node == "Start_intersection_from_P1":
+                        if node == "P1_intersection" or node == "P0_intersection":
+                            continue
                     graph[adjacent_node][node] = value
         
         return graph
@@ -158,7 +173,7 @@ class Graph():
         previous_nodes, _ = self.dijkstra_algorithm(start_node=stops[-1])
         paths.append(self.compute_path_piece(previous_nodes=previous_nodes, start_node=stops[-1], target_node="Start"))
 
-        self.connect_paths(paths=paths)
+        return self.connect_paths(paths=paths)
 
     def compute_path_piece(self, previous_nodes, start_node, target_node):
         path = []
@@ -185,30 +200,25 @@ class Graph():
             for stop in path:
                 paths_joined.append(stop)
         
-        print(paths_joined)
+        # print(paths_joined)
+        for idx, stop in enumerate(paths_joined):
+            print(str(idx) + " - " + stop)
         return paths_joined
-
-    # def print_result(self, previous_nodes, start_node, target_node):
-    #     path = []
-    #     node = target_node
-        
-    #     while node != start_node:
-    #         path.append(node)
-    #         node = previous_nodes[node]
     
-    #     # Add the start node manually
-    #     path.append(start_node)
-    #     # path = reversed(path)
-    #     list.reverse(path)
+    def compute_directions_for_path(self, path):
+        directions = []
 
-    #     out = []
-    #     i = 0
-    #     while i < len(path) -1:
-    #         out.append(path[i] + " (" + self.direction_graph[path[i]][path[i+1]]+ ")")
-    #         i += 1
-    #     out.append(path[len(path)-1])
+        for idx, stop in enumerate(path):
+            if idx == len(path) - 1:
+                continue
+            # print(stop + " - " + path[idx + 1])
+            directions.append(self.direction_graph[stop][path[idx + 1]])
 
-    #     print(" -> ".join(out))
+        print('\n')
+        for idx, stop in enumerate(directions):
+            print(str(idx) + " - " + stop)
+        
+        return directions
 
 path_finder = PathFinder()
 path_finder.compute_path()
