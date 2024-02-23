@@ -13,9 +13,11 @@ class PathFinder:
         response_json = response.json()
         print(response_json)
 
-    def compute_path(self):
-        path = self.graph.compute_path(["P0C0", "P0C1", "P1C0", "P1C1"])
-        self.graph.compute_directions_for_path(path=path)
+    def compute_path(self, stops):
+        path = self.graph.compute_path(stops=stops)
+        directions = self.graph.compute_directions_for_path(path=path)
+
+        return path, directions, stops
     
  
 class Graph():
@@ -221,4 +223,4 @@ class Graph():
         return directions
 
 path_finder = PathFinder()
-path_finder.compute_path()
+path_finder.compute_path(["P0C0", "P0C1", "P1C0", "P1C1"])
