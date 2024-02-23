@@ -17,7 +17,7 @@ class PathFinder:
         path = self.graph.compute_path(stops=stops)
         directions = self.graph.compute_directions_for_path(path=path)
 
-        return path, directions, stops
+        return path, directions 
     
  
 class Graph():
@@ -203,8 +203,8 @@ class Graph():
                 paths_joined.append(stop)
         
         # print(paths_joined)
-        for idx, stop in enumerate(paths_joined):
-            print(str(idx) + " - " + stop)
+        # for idx, stop in enumerate(paths_joined):
+        #     print(str(idx) + " - " + stop)
         return paths_joined
     
     def compute_directions_for_path(self, path):
@@ -216,11 +216,8 @@ class Graph():
             # print(stop + " - " + path[idx + 1])
             directions.append(self.direction_graph[stop][path[idx + 1]])
 
-        print('\n')
-        for idx, stop in enumerate(directions):
-            print(str(idx) + " - " + stop)
+        # print('\n')
+        # for idx, stop in enumerate(directions):
+        #     print(str(idx) + " - " + stop)
         
         return directions
-
-path_finder = PathFinder()
-path_finder.compute_path(["P0C0", "P0C1", "P1C0", "P1C1"])
