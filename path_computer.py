@@ -1,7 +1,7 @@
 from intersection_actions import IntersectionAction
 import path_finder
 
-class PathFollower:
+class PathComputer:
     path_finder = None
 
     def __init__(self) -> None:
@@ -48,7 +48,3 @@ class PathFollower:
         
         print(actions_enums)
         return actions_enums
-
-
-# path_follower = PathFollower()
-# path_follower.follow_path(["P0C0", "P0C1", "P1C0", "P1C1"])

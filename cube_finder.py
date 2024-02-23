@@ -21,6 +21,3 @@ class CubeFinder:
 
         stops.sort()
         return stops
-
-# cube_finder = CubeFinder()
-# cube_finder.get_cube_positions_for_person("0e54caf7-eb6b-4d2f-a41c-40203bb1a1ee")
