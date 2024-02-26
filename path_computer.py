@@ -31,6 +31,9 @@ class PathComputer:
                 stops.remove(path_step)
             actions.append(directions[idx])
 
+        actions.insert(0, "turn_around")
+        actions.append("stop")
+
         actions_enums = []
         for action in actions:
             a = None
