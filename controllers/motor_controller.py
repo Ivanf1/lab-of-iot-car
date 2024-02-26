@@ -2,6 +2,7 @@ from picar import back_wheels
 import picar as picar
 
 DEFAULT_SPEED = 30
+PIVOT_SPEED = 20
 
 class MotorController:
     def __init__(self) -> None:
@@ -15,17 +16,12 @@ class MotorController:
         self.bw.forward()
 
     def pivot_left(self):
-        self.bw.speed = DEFAULT_SPEED
+        self.bw.speed = PIVOT_SPEED
         self.bw.pivot_left()
 
     def pivot_right(self):
-        self.bw.speed = DEFAULT_SPEED
+        self.bw.speed = PIVOT_SPEED
         self.bw.pivot_right()
 
     def stop(self):
         self.bw.stop()
-
-
-
-
-
