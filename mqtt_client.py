@@ -1,14 +1,19 @@
 import paho.mqtt.client as mqtt
 
 class MqttClient:
-    broker_address = "localhost"
+    config = None
+    broker_address = "192.168.1.82"
     mqttc = None
     connected = False
 
     waiting = False
     got_response = False
 
-    def __init__(self) -> None:
+    got_server_ip = False
+
+    def __init__(self, config) -> None:
+        self.config = config
+
         self.mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         self.mqttc.on_connect = self.on_connect
         self.mqttc.on_message = self.on_message
@@ -21,6 +26,7 @@ class MqttClient:
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
         client.subscribe("sm_iot_lab/pickup_point/+/cube/+/release/response")
+        client.subscribe("sm_iot_lab/server/ip")
         self.connected = True
 
     # The callback for when a PUBLISH message is received from the server.
@@ -29,10 +35,17 @@ class MqttClient:
         if msg.topic.endswith("release/response"):
             self.got_response = True
 
+        if msg.topic.endswith("server/ip"):
+            ip = str(msg.payload)[2:len(str(msg.payload))-1]
+            self.config.set_server_ip(ip)
+            self.got_server_ip = True
+
     def start(self):
         self.mqttc.loop_start()
 
         while not self.connected:
+            continue
+        while not self.got_server_ip:
             continue
 
         self.mqttc.loop_stop()
