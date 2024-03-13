@@ -3,5 +3,6 @@
 picar
 
 test_http.py
+test.py
 
 __pycache__

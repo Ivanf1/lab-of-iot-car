@@ -10,6 +10,9 @@ class PathComputer:
     def compute_path(self, stops):
         path, directions = self.path_finder.compute_path(stops=stops)
 
+        print(path)
+        print(directions)
+
         return self.directions_to_intersection_actions(path=path, stops=stops, directions=directions)
 
     def directions_to_intersection_actions(self, path, stops, directions):

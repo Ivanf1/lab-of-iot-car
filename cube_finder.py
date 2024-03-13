@@ -1,10 +1,15 @@
 import requests
 
 class CubeFinder:
-    baseUrl = "http://localhost:3000/api/person/"
+    config = None
+    # baseUrl = "http://192.168.1.82:3000/api/person/"
+
+    def __init__(self, config):
+        self.config = config
 
     def get_cube_positions_for_person(self, person_uuid):
-        response = requests.get(self.baseUrl + person_uuid + "/cubes")
+        url = "http://" + self.config.get_server_ip() + ":3000/api/person/"
+        response = requests.get(url + person_uuid + "/cubes")
         response_json = response.json()
 
         stops = self.build_stops_list(json=response_json)

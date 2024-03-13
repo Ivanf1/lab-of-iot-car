@@ -27,9 +27,12 @@ class Graph():
             self.graph[node] = {}
 
         self.graph["Start"]["Start_intersection_from_P0"] = 1
+        # self.graph["Start"]["Start_intersection_from_P0"] = 2
         self.graph["Start"]["Start_intersection_from_P1"] = 1
 
         self.graph["Start_intersection_from_P0"]["P1_intersection"] = 1
+        # self.graph["Start_intersection_from_P0"]["P1_intersection"] = 20
+        # self.graph["Start_intersection_from_P0"]["P1_intersection"] = 2
         self.graph["P1_intersection"]["Start_intersection_from_P0"] = 20
 
         self.graph["Start_intersection_from_P0"]["P0_intersection"] = 1
@@ -198,6 +201,12 @@ class Graph():
         # print(paths_joined)
         # for idx, stop in enumerate(paths_joined):
         #     print(str(idx) + " - " + stop)
+        for idx, path in enumerate(paths_joined):
+            if idx + 1 > len(paths_joined):
+                return
+            if path == "Start_intersection_from_P1" and paths_joined[idx + 1] == "P0_intersection":
+                path = "Start_intersection_from_P0"
+        
         return paths_joined
     
     def compute_directions_for_path(self, path):

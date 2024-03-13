@@ -2,7 +2,8 @@ import paho.mqtt.client as mqtt
 
 class MqttClient:
     config = None
-    broker_address = "192.168.1.82"
+    # broker_address = "192.168.1.82"
+    broker_address = "192.168.1.21"
     mqttc = None
     connected = False
 
@@ -63,7 +64,9 @@ class MqttClient:
         self.got_response = False
         self.waiting = False
 
+    def publish_message_async(self, topic, message):
+        self.mqttc.loop_start()
 
-# mqtt_client = MqttClient()
-# mqtt_client.start()
-# mqtt_client.publish_message_sync("sm_iot_lab/pickup_point/0/cube/0/release/request")
+        self.mqttc.publish(topic=topic, payload=message)
+
+        self.mqttc.loop_stop()
